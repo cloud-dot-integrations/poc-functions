@@ -1,0 +1,9 @@
+= POC-Functions
+
+This repository contains a number of Knative functions, Camel-K items and support files.
+
+* qute-funq: Templating
+* rewrite-funq: Rewriting of content
+
+See the respective README files for more instructions
+

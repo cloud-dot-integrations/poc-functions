@@ -1,0 +1,112 @@
+= rewrite-funq project
+
+This project is a content-rewriting function for Knative using Quarkus funq
+
+== Scenario
+
+In the scenario we rewrite the payload of an `Action` from https://github.com/RedHatInsights/insights-schemas-java[Java Avro Schemas] in a KNative sequence.
+
+[ditaa]
+....
++--------+  Action   +----------+   Action'  +-------+
+| Source | --------> | rewriter |  --------> |  sink |
++--------+           +----------+            +-------+
+....
+
+Source can be anything that creates CloudEvents with an `Action` payload.
+
+The rewrite rules are encoded within the environment of the K-Service ( see
+link:src/main/knative/ksvc.yml[ksvc.yml] ):
+
+[source,yaml]
+----
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: rewriter
+spec:
+  template:
+    spec:
+      containers:
+        - image: pilhuhn/rewrite-funq
+          env:
+            - name: RULES
+              value: |
+                  key3: .ce.source       #1
+                  key1: $key1 + .ce.id   #2
+                  -key2                    #3
+----
+<1> Set `key3` to the name of the CloudEvent source
+<2> Set `key1` to the previous value and append the CloudEvent id
+<3> Delete `key2`
+
+
+## Running the application in dev mode
+
+You can run your application in dev mode that enables live coding using:
+```shell script
+./mvnw compile quarkus:dev
+```
+
+> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+
+## Packaging and running the application
+
+The application can be packaged using:
+```shell script
+./mvnw package
+```
+It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
+Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+
+== Upload to container repo
+
+[source,bash]
+----
+docker build -f src/main/docker/Dockerfile.jvm -t pilhuhn/rewrite-funq .
+docker push pilhuhn/rewrite-funq
+----
+
+== Deploy to Knative
+
+[source,bash]
+----
+oc apply -f src/main/knative/ksvc.yml
+oc apply -f src/main/knative/kpipe.yml
+----
+
+
+
+The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+
+## Creating a native executable
+
+You can create a native executable using:
+```shell script
+./mvnw package -Pnative
+```
+
+Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+
+.NOTE
+This is also needed if your development env is not Linux
+
+```shell script
+./mvnw package -Pnative -Dquarkus.native.container-build=true
+```
+
+=== Container image
+
+In case of the native image use one of the `Dockerfile.native*` files
+
+[script,bash]
+----
+ docker build -f src/main/docker/Dockerfile.native-distroless -t pilhuhn/rewrite-funq-native .
+----
+
+Don't forget to use this image name in kpipe.yml
+
+You can then execute your native executable with: `./target/rewrite-funq-1.0.0-SNAPSHOT-runner`
+
+If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.html.
+

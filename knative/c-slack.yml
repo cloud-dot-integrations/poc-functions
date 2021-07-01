@@ -1,0 +1,22 @@
+#  camel-k: dependency=camel-slack
+- from:
+    uri: "knative:endpoint/slack"
+    steps:
+      - log:
+          message: "Got Message: ${body}"
+      - convert-body-to: "java.lang.String"
+      - choice:
+          when:
+            - simple: "${body} != null && ${body.length} > 0"
+              steps:
+                - to:
+                    uri: "slack:#some-channel?webhookUrl=https://hooks.slack.com/services/secret/part"
+          otherwise:
+            steps:
+              - set-body:
+                  constant: "no body received"
+              - set-header:
+                  name: ContentType
+                  simple: text/plain
+              - log:
+                  message: "Otherwise::${body}"

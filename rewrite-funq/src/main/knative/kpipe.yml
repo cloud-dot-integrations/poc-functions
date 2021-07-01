@@ -1,0 +1,35 @@
+# the sequence that calls the rewriter
+apiVersion: flows.knative.dev/v1
+kind: Sequence
+metadata:
+  name: sequence
+spec:
+  channelTemplate:
+    apiVersion: messaging.knative.dev/v1
+    kind: InMemoryChannel
+  steps:
+    - ref:
+        apiVersion: serving.knative.dev/v1
+        kind: Service
+        name: rewriter
+    - ref:
+        apiVersion: serving.knative.dev/v1
+        kind: Service
+        name: event-display
+---
+# the trigger that pulls messages from the broker
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: sequence-trigger
+spec:
+  broker: mybroker
+  filter:
+    attributes:
+      type: "com.redhat.cloud.notification"
+      source: "notifications-gw"
+  subscriber:
+    ref:
+      apiVersion: flows.knative.dev/v1
+      kind: Sequence
+      name: sequence
