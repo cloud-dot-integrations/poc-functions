@@ -4,6 +4,7 @@ import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.panache.common.Parameters;
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.Template;
+import io.quarkus.qute.TemplateException;
 import io.quarkus.qute.TemplateInstance;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -32,7 +33,16 @@ public class TemplateProcessor {
         TemplateInstance ti = t.data(payload);
 
         // Render the template with the values
-        String result = ti.render();
+        // Quarkus 2 is more strict than Q1, so we need the try/catch block
+        String result = null;
+        try {
+            result = ti.render();
+        } catch (Exception e) {
+            e.printStackTrace();  // TODO: Customise this generated block
+            if (e instanceof TemplateException) {
+                result = "ERROR: " + e.getCause().getMessage();
+            }
+        }
         return result;
     }
 
