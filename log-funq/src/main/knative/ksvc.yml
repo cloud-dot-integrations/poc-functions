@@ -1,0 +1,42 @@
+# our rewrite function
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: log-funq
+  labels:
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+    app.kubernetes.io/name: log-funq
+  annotations:
+    app.openshift.io/connects-to: >-
+      [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"postgresql"}]
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/version: 1.0.0-SNAPSHOT
+        app.kubernetes.io/name: log-funq
+    spec:
+      containers:
+      - image: quay.io/pilhuhn/log-funq:jvm
+        name: log-funq
+        imagePullPolicy: Always
+        env:
+          - name: DB_HOST
+            value: postgresql
+          - name: DB_PORT
+            value: "5432"
+          - name: QUARKUS_DATASOURCE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: postgresql
+                key: database-user
+          - name: QUARKUS_DATASOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgresql
+                key: database-password
+          - name: QUARKUS_DATABASE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: postgresql
+                key: database-name

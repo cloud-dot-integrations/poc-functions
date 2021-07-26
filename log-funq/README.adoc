@@ -1,0 +1,37 @@
+= Log-Funq
+
+A function to "log" outcomes of other functions
+
+.Scenario
+[ditaa]
+....
++----------+  Action   +----------+   Action   +----------+
+| log-funq | --------> | function |  --------> | log-funq | --->
++----------+           +----------+            +----------+
+....
+
+== Expected Input format
+
+The function expects a Map (dict) <String, String> like this:
+
+[source, json]
+----
+{
+  "status" : true / false,
+  ...
+}
+----
+
+== Expected CE-Headers
+
+The function expects two CloudEvent headers
+
+* ce-id: the cloudevent ID
+* ce-rhaccount: tennant id.
+
+== DB-setup
+
+Right now this is only one single table, that needs to be manually set up.
+
+See src/main/resources/dbsetup.sql for the table structure
+and src/main/knative/ksvc.yml for the
