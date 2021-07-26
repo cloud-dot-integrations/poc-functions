@@ -19,14 +19,12 @@ spec:
     - ref:
         apiVersion: serving.knative.dev/v1
         kind: Service
-#        name: c-tower
-#        name: c-slack
-        name: event-display  # see knative/event-display.yml
-#        name: echoer
+        name: c-slack
     - ref:
         apiVersion: serving.knative.dev/v1
         kind: Service
-        name: echoer
+#        name: echoer
+        name: log-funq
 ---
 # the trigger that pulls messages from the broker
 apiVersion: eventing.knative.dev/v1
@@ -40,8 +38,8 @@ spec:
   broker: mybroker
   filter:
     attributes:
-      type: "com.redhat.cloud.notification"
-      source: "notifications-gw"
+      type: "com.redhat.cloud.notification.toCamel"
+      rhrouting : slack
   subscriber:
     ref:
       apiVersion: flows.knative.dev/v1
