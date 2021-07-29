@@ -1,0 +1,87 @@
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: promtail
+#   labels:
+#     helm.sh/chart: promtail-3.6.0
+#     app.kubernetes.io/name: promtail
+#     app.kubernetes.io/instance: promtail
+#     app.kubernetes.io/version: "2.2.1"
+#     app.kubernetes.io/managed-by: Helm
+
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: promtail
+#   labels:
+#     helm.sh/chart: promtail-3.6.0
+#     app.kubernetes.io/name: promtail
+#     app.kubernetes.io/instance: promtail
+#     app.kubernetes.io/version: "2.2.1"
+#     app.kubernetes.io/managed-by: Helm
+# rules:
+#   - apiGroups:
+#       - ""
+#     resources:
+#       - nodes
+#       - nodes/proxy
+#       - services
+#       - endpoints
+#       - pods
+#     verbs:
+#       - get
+#       - watch
+#       - list
+#   - apiGroups:
+#     - security.openshift.io
+#     resourceNames:
+#     - hostmount-anyuid
+#     - privileged
+#     resources:
+#     - securitycontextconstraints
+#     verbs:
+#     - use
+
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: promtail
+#   labels:
+#     helm.sh/chart: promtail-3.6.0
+#     app.kubernetes.io/name: promtail
+#     app.kubernetes.io/instance: promtail
+#     app.kubernetes.io/version: "2.2.1"
+#     app.kubernetes.io/managed-by: Helm
+# subjects:
+#   - kind: ServiceAccount
+#     name: promtail
+#     namespace: loki
+# roleRef:
+#   kind: ClusterRole
+#   name: promtail
+#   apiGroup: rbac.authorization.k8s.io
+
+
+#
+# Setting up new ServiceAccount+ClusterRole+ClusterRoleBinding for promtail is preferred.
+# However, on OSD the dedicated-admins group does not have sufficient privileges to grant privileged SSC.
+# Therefore, we work around by using the "logcollector" ServiceAccount, which is created by openshift-logging operator originally for fluentd collector, instead.
+#
+
+---
+apiVersion: logging.openshift.io/v1
+kind: ClusterLogging
+metadata:
+  name: instance
+  namespace: openshift-logging
+spec:
+  managementState: Managed
+  collection:
+    logs:
+      type: fluentd
+      fluentd:
+        nodeSelector:
+          do-not-match-any-node: as-we-dont-actually-need-fluentd-to-run
