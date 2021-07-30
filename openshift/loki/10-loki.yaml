@@ -1,0 +1,202 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: loki
+
+parameters:
+- name: PERSISTENCE_SIZE
+  value: 10Gi
+
+objects:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app: loki
+      chart: loki-2.5.3
+      heritage: Helm
+      release: loki
+    annotations:
+      {}
+    name: loki
+    namespace: loki
+  automountServiceAccountToken: true
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: loki
+    namespace: loki
+    labels:
+      app: loki
+      chart: loki-2.5.3
+      release: loki
+      heritage: Helm
+  data:
+    loki.yaml: YXV0aF9lbmFibGVkOiBmYWxzZQpjaHVua19zdG9yZV9jb25maWc6CiAgbWF4X2xvb2tfYmFja19wZXJpb2Q6IDBzCmNvbXBhY3RvcjoKICBzaGFyZWRfc3RvcmU6IGZpbGVzeXN0ZW0KICB3b3JraW5nX2RpcmVjdG9yeTogL2RhdGEvbG9raS9ib2x0ZGItc2hpcHBlci1jb21wYWN0b3IKaW5nZXN0ZXI6CiAgY2h1bmtfYmxvY2tfc2l6ZTogMjYyMTQ0CiAgY2h1bmtfaWRsZV9wZXJpb2Q6IDNtCiAgY2h1bmtfcmV0YWluX3BlcmlvZDogMW0KICBsaWZlY3ljbGVyOgogICAgcmluZzoKICAgICAga3ZzdG9yZToKICAgICAgICBzdG9yZTogaW5tZW1vcnkKICAgICAgcmVwbGljYXRpb25fZmFjdG9yOiAxCiAgbWF4X3RyYW5zZmVyX3JldHJpZXM6IDAKbGltaXRzX2NvbmZpZzoKICBlbmZvcmNlX21ldHJpY19uYW1lOiBmYWxzZQogIHJlamVjdF9vbGRfc2FtcGxlczogdHJ1ZQogIHJlamVjdF9vbGRfc2FtcGxlc19tYXhfYWdlOiAxNjhoCnNjaGVtYV9jb25maWc6CiAgY29uZmlnczoKICAtIGZyb206ICIyMDIwLTEwLTI0IgogICAgaW5kZXg6CiAgICAgIHBlcmlvZDogMjRoCiAgICAgIHByZWZpeDogaW5kZXhfCiAgICBvYmplY3Rfc3RvcmU6IGZpbGVzeXN0ZW0KICAgIHNjaGVtYTogdjExCiAgICBzdG9yZTogYm9sdGRiLXNoaXBwZXIKc2VydmVyOgogIGh0dHBfbGlzdGVuX3BvcnQ6IDMxMDAKc3RvcmFnZV9jb25maWc6CiAgYm9sdGRiX3NoaXBwZXI6CiAgICBhY3RpdmVfaW5kZXhfZGlyZWN0b3J5OiAvZGF0YS9sb2tpL2JvbHRkYi1zaGlwcGVyLWFjdGl2ZQogICAgY2FjaGVfbG9jYXRpb246IC9kYXRhL2xva2kvYm9sdGRiLXNoaXBwZXItY2FjaGUKICAgIGNhY2hlX3R0bDogMjRoCiAgICBzaGFyZWRfc3RvcmU6IGZpbGVzeXN0ZW0KICBmaWxlc3lzdGVtOgogICAgZGlyZWN0b3J5OiAvZGF0YS9sb2tpL2NodW5rcwp0YWJsZV9tYW5hZ2VyOgogIHJldGVudGlvbl9kZWxldGVzX2VuYWJsZWQ6IGZhbHNlCiAgcmV0ZW50aW9uX3BlcmlvZDogMHM=
+
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    name: loki
+    namespace: loki
+    labels:
+      app: loki
+      chart: loki-2.5.3
+      heritage: Helm
+      release: loki
+  rules: []
+
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: loki
+    namespace: loki
+    labels:
+      app: loki
+      chart: loki-2.5.3
+      heritage: Helm
+      release: loki
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: loki
+  subjects:
+  - kind: ServiceAccount
+    name: loki
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: loki-headless
+    namespace: loki
+    labels:
+      app: loki
+      chart: loki-2.5.3
+      release: loki
+      heritage: Helm
+      variant: headless
+  spec:
+    clusterIP: None
+    ports:
+      - port: 3100
+        protocol: TCP
+        name: http-metrics
+        targetPort: http-metrics
+    selector:
+      app: loki
+      release: loki
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: loki
+    namespace: loki
+    labels:
+      app: loki
+      chart: loki-2.5.3
+      release: loki
+      heritage: Helm
+    annotations:
+      {}
+  spec:
+    type: ClusterIP
+    ports:
+      - port: 3100
+        protocol: TCP
+        name: http-metrics
+        targetPort: http-metrics
+    selector:
+      app: loki
+      release: loki
+
+- apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: loki
+    namespace: loki
+    labels:
+      app: loki
+      chart: loki-2.5.3
+      release: loki
+      heritage: Helm
+    annotations:
+      {}
+  spec:
+    podManagementPolicy: OrderedReady
+    replicas: 1
+    selector:
+      matchLabels:
+        app: loki
+        release: loki
+    serviceName: loki-headless
+    updateStrategy:
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: loki
+          name: loki
+          release: loki
+        annotations:
+          checksum/config: 8e25d13c1e9d7eac4aa6cc1bf2922bb2ca8a416688fa860098859a55b38f919e
+          prometheus.io/port: http-metrics
+          prometheus.io/scrape: "true"
+      spec:
+        serviceAccountName: loki
+        initContainers:
+          []
+        containers:
+          - name: loki
+            image: "grafana/loki:2.2.1"
+            imagePullPolicy: IfNotPresent
+            args:
+              - "-config.file=/etc/loki/loki.yaml"
+            volumeMounts:
+              - name: config
+                mountPath: /etc/loki
+              - name: storage
+                mountPath: "/data"
+                subPath:
+            ports:
+              - name: http-metrics
+                containerPort: 3100
+                protocol: TCP
+            livenessProbe:
+              httpGet:
+                path: /ready
+                port: http-metrics
+              initialDelaySeconds: 45
+            readinessProbe:
+              httpGet:
+                path: /ready
+                port: http-metrics
+              initialDelaySeconds: 45
+            resources:
+              {}
+            securityContext:
+              readOnlyRootFilesystem: true
+            env:
+        nodeSelector:
+          {}
+        affinity:
+          {}
+        tolerations:
+          []
+        terminationGracePeriodSeconds: 4800
+        volumes:
+          - name: config
+            secret:
+              secretName: loki
+    volumeClaimTemplates:
+    - metadata:
+        name: storage
+        annotations:
+          {}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: ${PERSISTENCE_SIZE}
+        storageClassName:
