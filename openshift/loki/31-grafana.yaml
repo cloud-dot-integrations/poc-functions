@@ -73,6 +73,8 @@ spec:
       auto_sign_up: True
     users:
       allow_signup: False
+      auto_assign_org: True
+      auto_assign_org_role: Editor
   containers:
     - args:
         - '-provider=openshift'
