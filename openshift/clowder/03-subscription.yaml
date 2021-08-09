@@ -1,0 +1,10 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: clowder
+  namespace: clowder
+spec:
+  channel: alpha
+  name: clowder
+  source: clowder-source
+  sourceNamespace: clowder

@@ -1,0 +1,36 @@
+apiVersion: cloud.redhat.com/v1alpha1
+kind: ClowdEnvironment
+metadata:
+  name: integrations-dev
+spec:
+  providers:
+    db:
+      mode: local
+    inMemoryDb:
+      mode: redis
+    kafka:
+      cluster:
+        name: platform-mq
+        namespace: kafka
+      mode: app-interface
+    logging:
+      mode: none
+    metrics:
+      mode: none
+      path: /metrics
+      port: 9000
+    objectStore:
+      mode: none
+    serviceMesh:
+      mode: disabled
+    web:
+      mode: operator
+      port: 8000
+  resourceDefaults:
+    limits:
+      cpu: 300m
+      memory: 256Mi
+    requests:
+      cpu: 30m
+      memory: 128Mi
+  targetNamespace: clowder
